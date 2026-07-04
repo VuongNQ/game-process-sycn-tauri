@@ -29,6 +29,12 @@ fn load_dashboard(app: tauri::AppHandle) -> Result<DashboardData, String> {
         eprintln!("[firestore] load_dashboard reconcile_playtime_with_firestore failed: {e}");
     }
 
+    // Pull the latest cloud snapshot before reading local state so startup and manual
+    // refresh both see the current library/settings on this device.
+    if let Err(e) = settings::fetch_all_from_firestore(&app) {
+        eprintln!("[firestore] load_dashboard fetch_all_from_firestore failed: {e}");
+    }
+
     let mut state = settings::load_state(&app)?;
     // Merge device-specific path_overrides into save_paths (transient — not persisted).
     settings::apply_path_overrides(&mut state.games, &state.settings);
